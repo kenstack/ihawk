@@ -1,6 +1,5 @@
-<snippet>
-  <content><![CDATA[
-# ${1:ihawk}
+
+## ihawk
  
 JQuery Mobile based application to query status and set temp basal rates on Medtronic insulin pumps. ihawk is based on Ben West's amazing decocare tools (add html link).   Utlizes a Raspberry Pi running an Apache 2 server to run an interface for CGI scripts that run decocare and the carelink stick.  
 
