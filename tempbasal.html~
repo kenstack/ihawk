@@ -1,0 +1,50 @@
+ <!DOCTYPE html>
+<html>
+
+
+<body>
+
+<div data-role="page" id="two" data-theme="a" data-url="two" tabindex="0" class="ui-page ui-page-theme-a" style="min-height: 536px;">
+
+	<div data-role="header" role="banner" class="ui-header ui-bar-inherit">
+		<h1 class="ui-title" role="heading" aria-level="1">iHawk Pump Control 0.3</h1>
+	</div><!-- /header -->
+
+	<div role="main" class="ui-content">
+		
+
+	<label for="tbduration">Temp Basal Duration (min)</label>
+	<input type="range" name="tbduration" id="tbduration" value="30" min="0" max="180" step="30" data-highlight="true" />
+<p>
+	<label for="tbrate">Temp Basal Rate (U/min)</label>
+	<input type="range" name="tbrate" id="tbrate" value="0.0" min="0.0" max="3.0" step="0.1" data-highlight="true"/>
+
+<p>
+<button id="settempbasal"  class="ui-btn ui-shadow ui-corner-all ui-btn-b">Set Temp Basal</button> <p>
+
+	
+		<p><a href="#one" data-direction="reverse" class="ui-btn ui-shadow ui-corner-all ui-btn-b">Back to Pump Controls</a></p>
+
+<script type="text/javascript">
+$("#settempbasal").click(function(){
+//get duration and rate from sliders
+var serial="808661";
+var tbdur=$("#tbduration").val();
+var tbrate=$("#tbrate").val();
+var urlcmd="cgi-bin/tb.sh/?sudo /home/kenstack/decoding-carelink/bin/mm-temp-basals.py set --rate "+tbrate+" --duration "+tbdur+" --port /dev/ttyUSB0 --serial "+ serial;
+console.log(urlcmd);
+$.get(urlcmd,function(Mydata,status){
+
+
+	}); //end get
+}); //end temp basal click
+
+</script>
+	</div><!-- /content -->
+
+	<div data-role="footer" role="contentinfo" class="ui-footer ui-bar-inherit">
+		<h4 class="ui-title" role="heading" aria-level="1">For Testing Only </h4>
+	</div><!-- /footer -->
+</div>
+</html>
+</body>

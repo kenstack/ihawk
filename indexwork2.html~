@@ -1,0 +1,160 @@
+ <!DOCTYPE html>
+<html>
+<body>
+
+<h1>iHawk Pump Status6</h1>
+
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<meta name="viewport" content="width=device-width, initial-scale=1"> 
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.css" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.js"></script>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+<script type="text/javascript" src="jquery.dynatable.js"></script>
+
+<style type="text/css">
+//.tftable {font-size:12px;color:#333333;width:100%;border-width: 1px;border-color: #729ea5;border-collapse: collapse;}
+//.tftable th {font-size:12px;background-color:#acc8cc;border-width: 1px;padding: 8px;border-style: solid;border-color: #729ea5;text-align:left;}
+//.tftable tr {background-color:#d4e3e5;}
+//.tftable td {font-size:12px;border-width: 1px;padding: 8px;border-style: solid;border-color: #729ea5;}
+//.tftable tr:hover {background-color:#ffffff;}
+
+<link href="/footable-2/css/footable.core.css" rel="stylesheet" type="text/css" />
+<link href="/footable-2/css/themes/footable.standalone.css" rel="stylesheet" type="text/css" />
+<script src="/footable-2/js/footable.js" type="text/javascript">
+ $(function () {
+            $('tftable').footable();
+        });
+
+</script>
+
+</style>
+
+</head>
+
+
+
+
+<script type="text/javascript">
+var Mydata= ' ';
+
+insulinremaining=" ";
+$(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+$(document).ready(function(){
+
+$(document).ajaxStart(function(){
+    $("#wait").css("display","block");
+  });
+  $(document).ajaxComplete(function(){
+    $("#wait").css("display","none");
+  });  
+
+
+
+
+
+
+$("button").click(function(){
+
+    $.get("cgi-bin/webtest1.sh",function(Mydata,status){
+     // alert(Mydata);
+
+
+var firstLine = Mydata.split('\n')[5];
+var junk=firstLine.toLowerCase();
+var statusobj = eval('(' + junk + ')');
+var pumptime = Mydata.split('\n')[4];
+
+var firstLine = Mydata.split('\n')[6];
+var junk=firstLine.toLowerCase();
+var tempbasalobj = eval('(' + junk + ')');
+
+var insulinremaining=Mydata.split('\n')[8];
+
+//console.log(junk.status,junk.bolusing,junk.suspended);
+//starttable
+//$('#my-final-table').dynatable({dataset: {records: obj}});
+//end table
+
+
+document.getElementById('pumptime').innerHTML = pumptime;
+ document.getElementById('status').innerHTML = statusobj.status;
+
+document.getElementById('bolusing').innerHTML = statusobj.bolusing;
+document.getElementById('suspended').innerHTML = statusobj.suspended;
+document.getElementById('insulinremaining').innerHTML = insulinremaining;
+document.getElementById('duration').innerHTML = tempbasalobj.duration;
+document.getElementById('rate').innerHTML = tempbasalobj.rate;
+
+$('#my-final-table').dynatable({
+  dataset: {
+    records: Mydata
+  }
+});
+
+//$("div#content").replaceWith(obj.status) 
+    });
+
+/* create variables from Mydata */
+
+
+
+
+
+  });
+});
+
+
+
+</script>
+
+
+
+
+ </head>
+<body>
+
+<button>pump jquery</button> <p>
+
+
+
+
+
+Pump Data at &nbsp;&nbsp;<label id="pumptime">N/A</label> <br><br> 
+<p>
+<!--Pump Status&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    <label id="status">N/A</label> <br>
+Bolus State&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   <label id="bolusing">N/A</label> <br>
+Suspend State&nbsp;&nbsp;&nbsp;&nbsp; <label id="suspended">N/A</label> <br>-->
+<!--
+Remaining Insulin &nbsp;&nbsp; <label id="insulinremaining">N/A</label> <br>
+Temp Basal(Duration,Units per Hour) &nbsp;&nbsp; <label id="duration">N/A</label> &nbsp;&nbsp <label id="rate">N/A</label><br> 
+-->
+
+
+<div id="wait" style="display:none;width:69px;height:89px;border:0px solid black;position:absolute;top:60%;left:50%;padding:0px;"><img src='ajax-loader.gif' width="32" height="32" /><br></div>
+
+
+
+<table class="tftable" border="1" align="center" data-filter="#filter">
+<tr><th align="center">Pump Status</th><th align="center">Bolus Status</th><th align="center">Suspend Status</th></tr>
+<tr><td align="center" id="status"></td><td align="center" id="bolusing"></td><td align="center" id="suspended"></td></tr>
+</table> <br>
+
+<table class="tftable" border="1" align="center">
+<tr><th>Insulin Remaining</th><th>Temp Basal Duration</th><th>Temp Basal Rate</th></tr>
+<tr><td id="insulinremaining"> </td><td id="duration"></td><td id="rate"></td></tr>
+</table> <br>
+
+
+        
+ </body>
+</html>
+
+
+
+</body>
+</html> 

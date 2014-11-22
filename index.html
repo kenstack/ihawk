@@ -1,0 +1,347 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<meta name="viewport" content="width=device-width, initial-scale=1"> 
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" 
+<script type="text/javascript" src="jquery.dynatable.js"></script>
+<script type="text/javascript" src="iob.js"></script>
+<style type="text/css">
+.tftable {font-size:12px;color:#333333;width:98%;border-width: 1px;border-color: #729ea5;border-collapse: collapse;}
+.tftable th {width:33%;align:center;font-size:14px;background-color:#acc8cc;border-width: 1px;padding: 2px;border-style: solid;border-color: #729ea5;text-align:center;}
+.tftable tr {background-color:#d4e3e5;}
+.tftable td {text-align:center;font-size:14px;border-width: 1px;padding: 2px;border-style: solid;border-color: #729ea5;}
+.tftable tr:hover {background-color:#ffffff;}
+.tftable2 {font-size:12px;color:#333333;width:98%;border-width: 1px;border-color: #729ea5;border-collapse: collapse;}
+.tftable2 th {width:25%;align:center;font-size:14px;background-color:#acc8cc;border-width: 1px;padding: 2px;border-style: solid;border-color: #729ea5;text-align:center;}
+.tftable2 tr {background-color:#d4e3e5;}
+.tftable2 td {text-align:center;font-size:14px;border-width: 1px;padding: 2px;border-style: solid;border-color: #729ea5;}
+.tftable2 tr:hover {background-color:#ffffff;} 
+h1 {text-align:center;font-size:16x;}
+
+ 
+h1 {text-align:center;font-size:16x;}
+
+.ui-title {
+    margin: 0.6em 10% 0.8em !important;
+}
+</style>
+
+
+</head>
+
+
+
+
+<script type="text/javascript">
+
+
+
+
+
+
+$(document).ready(function(){
+
+
+//setup spinners
+$(document).ajaxStart(function(){
+    $("#wait").css("display","block");
+  });
+ $(document).ajaxComplete(function(){
+    $("#wait").css("display","none");
+  });  
+$(document).ajaxStart(function(){
+    $("#wait2").css("display","block");
+  });
+ $(document).ajaxComplete(function(){
+    $("#wait2").css("display","none");
+  });  
+
+//settngs event handler
+$("#idsave").click(function(){
+localStorage.setItem('dir',$("#iddir").val());
+localStorage.setItem('port',$("#idport").val());
+localStorage.setItem('serial',$("#idserial").val());
+console.log("saved");
+console.log($("#idserial").val());
+});
+
+//temp basal event handler
+$("#settempbasal").click(function(){
+//disable user from querying during temp basal $.get
+document.getElementById("qpump").disabled = true;
+document.getElementById("settempbasal").disabled = true;
+//get data from setting and sliders
+tbdur=$("#tbduration").val();
+tbrate=$("#tbrate").val();
+serial=$("#idserial").val();
+port=$("#idport").val();
+dir=$("#iddir").val();
+
+//change file location by machine
+ urlcmd="cgi-bin/tb_qs.sh/?duration="+tbdur+"&rate="+tbrate+"&serial="+serial+"&port="+port+"&dir="+dir;
+
+$.get(urlcmd,function(){
+document.getElementById("qpump").disabled = false;
+document.getElementById("settempbasal").disabled = false;
+
+
+	}); //end get
+}); //end temp basal click
+
+
+
+//query event handler
+$("#qpump").click(function(){
+
+//prevent user from temp basal during query
+document.getElementById("settempbasal").disabled = true;
+document.getElementById("qpump").disabled = true;
+    $.get("cgi-bin/his.sh",function(Mydata,status){
+document.getElementById("settempbasal").disabled = false;
+document.getElementById("qpump").disabled = false;
+	console.log(Mydata);
+
+//replace all ' with " for parsing JSON properly
+Mydata=Mydata.replace(/'/g,'"');
+//parse results from mm-latest2 script
+
+//status info
+ firstLine = Mydata.split('\n')[5];
+ junk=firstLine.toLowerCase();
+ statusobj = JSON.parse(junk);
+//temp basal 
+ firstLine = Mydata.split('\n')[6];
+ junk=firstLine.toLowerCase();
+tempbasalobj = JSON.parse(junk);
+//basal pattern
+firstline=Mydata.split('\n')[7];
+basalobj=JSON.parse(firstline);
+//find current default basal rate
+//convert pumptime to 2 digits per - it is not a datestring or JSON 0's are missing
+//split after T but strip errant " first
+pumptimej = Mydata.split('\n')[4];
+pumptimej2=pumptimej.replace("\'","\"");
+pumptime=pumptimej2.replace("\'","\"");
+pumptime = pumptime.substring(0, pumptime.length - 1);
+ptarray = pumptime.split("T");
+//now grab pieces, 0 is hours, 1 is min, and 2 is sec
+ptime=ptarray[1].split(":");
+//add leading 0's if they are not there
+hk=ptime[0];
+mk=ptime[1];
+sk=ptime[2];
+if (hk.length==1) {hk="0"+hk;}
+if (mk.length==1) {mk="0"+mk;}
+if (sk.length==1) {sk="0"+sk}
+pto=hk+":"+mk+":"+sk;
+n=Object.keys(basalobj).length;
+found=-1;
+i=0;
+while(i<n-1) {
+if (pto>=basalobj[i].start && pto<=basalobj[i+1].start) found=i;
+i++;
+}
+if (found==-1) found=0; //this means it must be last record, start of next is record 0
+
+if (found>1&&found<(n-2))  {
+curbasalrate=basalobj[found-1].rate;
+curbasalend=basalobj[found+1].start;
+nextbasalrate=basalobj[found].rate;
+nextbasalend=basalobj[found+2].start;} 
+else if (found==n-2) {
+curbasalrate=basalobj[found].rate;
+curbasalend=basalobj[found+1].start;
+nextbasalrate=basalobj[found+1].rate;
+nextbasalend=basalobj[0].start;}
+else if (found==0) {
+curbasalrate=basalobj[0].rate;
+curbasalend=basalobj[1].start;
+nextbasalrate=basalobj[1].rate;
+nextbasalend=basalobj[2].start;
+}
+else //found=n-1
+{
+curbasalrate=basalobj[n-1].rate;
+curbasalend=basalobj[0].start;
+nextbasalrate=basalobj[0].rate;
+nextbasalend=basalobj[1].start;
+}
+
+insulinremaining=Mydata.split('\n')[8];
+//history data
+junk=Mydata.split('\n')[11];
+junk=junk.replace(/'/g,'"');
+historyobj=JSON.parse(junk);
+//settings data
+firstLine=Mydata.split('\n')[3];
+junk=firstLine.toLowerCase();
+settingsobj=JSON.parse(junk);
+//pump type
+pumptype=Mydata.split('\n')[2];
+pumptype = pumptype.substring(0, pumptype.length - 1);
+//find bolus history in range (currently grabbing up to 6 hours to match iob)
+
+ai = [0.0,0.0];
+ai =iob(historyobj,settingsobj,pumptime);
+actintot=ai[1]; //total active insulin
+actincor=ai[0]; //total active insulin minus insulin used to cover carbs 
+actincarb=actintot-actincor; //calc act insulin from carbs
+
+
+//update time and status
+document.getElementById('pumptime').innerHTML = pumptime;
+document.getElementById('ptype').innerHTML = pumptype;
+ document.getElementById('status').innerHTML = statusobj.status;
+document.getElementById('bolusing').innerHTML = statusobj.bolusing;
+document.getElementById('suspended').innerHTML = statusobj.suspended;
+//update current temp basal state
+document.getElementById('insulinremaining').innerHTML = insulinremaining;
+document.getElementById('duration').innerHTML = tempbasalobj.duration;
+document.getElementById('rate').innerHTML = tempbasalobj.rate;
+//update active insulin 
+document.getElementById('idactin').innerHTML = actintot.toFixed(2);
+document.getElementById('idactincor').innerHTML = actincor.toFixed(2);
+document.getElementById('idactincarb').innerHTML = actincarb.toFixed(2);
+//basal rates
+document.getElementById('idcurbasalrate').innerHTML = curbasalrate.toFixed(2);
+document.getElementById('idcurbasalend').innerHTML = curbasalend;
+document.getElementById('idnextbasalrate').innerHTML = nextbasalrate.toFixed(2);
+document.getElementById('idnextbasalend').innerHTML = nextbasalend;
+
+
+    }); //from get query
+
+
+  }); //from button click
+}); //doc ready
+
+
+
+</script>
+
+
+
+
+ </head>
+<body class="container">
+<div data-role="page" id="one" data-theme="a" class="ui-page ui-page-theme-a" ;">
+<div data-role="header" role="banner" class="ui-header ui-bar-inherit" > 
+	<h1>iHawk Pump Control 0.3</h1>
+		<!--<h1 class="ui-title" role="heading" aria-level="2">iHawk Pump Control 0.3</h1> -->
+	</div><!-- /header -->
+<!-- <h1>iHawk Pump Control 0.3</h1> style="min-height: 536px-->
+<div id="qdate" style="text-align:center;">  <label id="pumptime">  </label> </div>
+
+
+
+<table class="tftable2" border="1" align="center" data-filter="#filter">
+<caption>Live Pump Data</caption>
+<tr><th align="center">Type</th><th align="center">Status</th><th align="center">Bolusing</th><th align="center">Suspend</th></tr>
+<tr><td align="center" id="ptype"></td><td align="center" id="status"></td><td align="center" id="bolusing"></td><td align="center" id="suspended"></td></tr>
+</table>
+
+<table class="tftable" border="1" align="center">
+<tr><th align="center">Reservoir Insulin (U)</th><th>Temp Basal Rate (U/min)</th><th align="center">Temp Basal Duration (min)</th></tr>
+<tr><td id="insulinremaining"> </td></td><td id="rate"></td><td id="duration"></tr>
+</table> 
+
+<table class="tftable" border="1" align="center">
+<tr><th align="center">Total Active Insulin (U)</th><th align="center">Active Insulin-Correction (U)</th><th>Active Insulin-Carbs (U) </th></tr>
+<tr><td id="idactin"> </td><td id="idactincor"></td><td id="idactincarb"></td></tr>
+</table>
+
+<table class="tftable2" border="1" align="center">
+<caption>Default Basal Rates</caption>
+<tr><th align="center">Current Basal Rate (U/hr)</th><th align="center">Ending At</th><th>Next Basal Rate (U/hr)</th><th>Ending At </th></tr>
+<tr  align="center"><td id="idcurbasalrate"> </td><td id="idcurbasalend"></td><td id="idnextbasalrate"></td><td id="idnextbasalend"></td></tr>
+</table>
+<p>
+
+<button id="qpump"  class="ui-btn ui-shadow ui-corner-all ui-btn-b">Query Pump</button> <p>
+<div id="tempsetbut" >
+<a href="#two" id="tbasal" data-role="button" rel="external" class="ui-btn ui-shadow ui-corner-all ui-btn-b">Temp Basal Controls</a>
+<p>
+ <a href="#three" data-role="button" rel="external" class="ui-btn ui-shadow ui-corner-all ui-btn-b">User Settings</a>
+</div>
+<div id="wait" style="display:none;width:69px;height:89px;border:0px solid black;position:absolute;top:50%;left:40%;padding:0px;"><img src='ajax-loader.gif' width="64" height="64" /><br></div>
+
+</div> <!--end page 1 -->
+
+<div data-role="page" id="two" data-theme="a" data-url="two" tabindex="0" class="ui-page ui-page-theme-a" style="min-height: 536px;">
+
+	<div data-role="header" role="banner" class="ui-header ui-bar-inherit">
+		<h1 class="ui-title" role="heading" aria-level="1">iHawk Pump Control 0.3</h1>
+	</div><!-- /header -->
+
+	<div role="main" class="ui-content">
+		
+
+	<label for="tbduration">Temp Basal Duration (min)</label>
+	<input type="range" name="tbduration" id="tbduration" value="30" min="0" max="180" step="30" data-highlight="true" />
+<p>
+	<label for="tbrate">Temp Basal Rate (U/min)</label>
+	<input type="range" name="tbrate" id="tbrate" value="0.0" min="0.0" max="3.0" step="0.05" data-highlight="true"/>
+
+<p>
+<button id="settempbasal"  class="ui-btn ui-shadow ui-corner-all ui-btn-b">Set Temp Basal</button> <p>
+
+	
+		<p><a href="#one" data-direction="reverse" class="ui-btn ui-shadow ui-corner-all ui-btn-b">Back to Pump Controls</a></p>
+
+
+	</div><!-- /content -->
+
+<div id="wait2" style="display:none;width:69px;height:89px;border:0px solid black;position:absolute;top:50%;left:40%;padding:0px;"><img src='ajax-loader.gif' width="64" height="64" /><br></div>
+
+	<div data-role="footer" role="contentinfo" class="ui-footer ui-bar-inherit">
+		<h4 class="ui-title" role="heading" aria-level="1">For Testing Only </h4>
+	</div><!-- /footer -->
+</div> 
+
+<div data-role="page" id="three" data-theme="a" data-url="three" tabindex="0" class="ui-page ui-page-theme-a" style="min-height: 536px;">
+
+	<div data-role="header" role="banner" class="ui-header ui-bar-inherit">
+		<h1 class="ui-title" role="heading" aria-level="1">iHawk Pump Control 0.3</h1>
+	</div><!-- /header -->
+
+	<div role="main" class="ui-content">
+		
+ 	<label for="basic">Directory</label>
+    <input type="text" name="dir" id="iddir" value="/home/pi"  />
+
+<label for="basic">Serial #</label>
+    <input type="text" name="serial" id="idserial" value="111111"  />
+
+<label for="basic">Port</label>
+    <input type="text" name="port" id="idport" value="/dev/ttyUSB0"  />
+<p>
+<button id="idsave"  class="ui-btn ui-shadow ui-corner-all ui-btn-b">Save Settings</button> <p>
+
+	
+		<p><a href="#one" data-direction="reverse" class="ui-btn ui-shadow ui-corner-all ui-btn-b">Back to Pump Controls</a></p>
+<script type="text/javascript">
+//get saved settings and display
+if(localStorage.getItem('dir') !=null) {$("#iddir").val(localStorage.getItem('dir'))};
+if(localStorage.getItem('port') !=null) {$("#idport").val(localStorage.getItem('port'))};
+if(localStorage.getItem('serial') !=null) {$("#idserial").val(localStorage.getItem('serial'))};
+</script>
+	</div><!-- /content -->
+
+	<div data-role="footer" role="contentinfo" class="ui-footer ui-bar-inherit">
+		<h4 class="ui-title" role="heading" aria-level="1">For Testing Only </h4>
+	</div><!-- /footer -->
+</div> 
+
+
+
+
+ 
+
+
+
+</body>
+</html> 
