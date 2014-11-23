@@ -100,7 +100,14 @@ $("#qpump").click(function(){
 //prevent user from temp basal during query
 document.getElementById("settempbasal").disabled = true;
 document.getElementById("qpump").disabled = true;
-    $.get("cgi-bin/his.sh",function(Mydata,status){
+
+serial=$("#idserial").val();
+port=$("#idport").val();
+dir=$("#iddir").val();
+
+//change file location by machine
+ urlcmd="cgi-bin/his2.sh/?serial="+serial+"&port="+port+"&dir="+dir;
+    $.get(urlcmd,function(Mydata,status){
 document.getElementById("settempbasal").disabled = false;
 document.getElementById("qpump").disabled = false;
 	console.log(Mydata);
