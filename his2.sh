@@ -19,6 +19,7 @@ unset IFS
 
 
 
+# get last 6 hours of data
 $dir/decoding-carelink/bin/mm-latest2.py 360 --init --port $port --serial  $serial | tee ldata > /dev/null
 sed -n -e 's/.*data://p' ldata 
 #grab just history
