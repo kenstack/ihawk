@@ -3,6 +3,9 @@
 <head>
 <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/latest.js"></script>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 <meta name="viewport" content="width=device-width, initial-scale=1"> 
@@ -95,132 +98,136 @@ document.getElementById("settempbasal").disabled = false;
 
 
 //query event handler
-$("#qpump").click(function(){
+$("#qpumpxxxx").click(function(){
 
-//prevent user from temp basal during query
-document.getElementById("settempbasal").disabled = true;
-document.getElementById("qpump").disabled = true;
+  //prevent user from temp basal during query
+  document.getElementById("settempbasal").disabled = true;
+  document.getElementById("qpump").disabled = true;
 
-serial=$("#idserial").val();
-port=$("#idport").val();
-dir=$("#iddir").val();
+  serial=$("#idserial").val();
+  port=$("#idport").val();
+  dir=$("#iddir").val();
 
-//change file location by machine
- urlcmd="cgi-bin/his2.sh/?serial="+serial+"&port="+port+"&dir="+dir;
-    $.get(urlcmd,function(Mydata,status){
-document.getElementById("settempbasal").disabled = false;
-document.getElementById("qpump").disabled = false;
-	console.log(Mydata);
+  //change file location by machine
+   urlcmd="latest.json?serial="+serial;
+      $.get(urlcmd,function(Mydata,status){
+  document.getElementById("settempbasal").disabled = false;
+  document.getElementById("qpump").disabled = false;
+    console.log(Mydata);
 
-//replace all ' with " for parsing JSON properly
-Mydata=Mydata.replace(/'/g,'"');
-//parse results from mm-latest2 script
+  /*
+  //replace all ' with " for parsing JSON properly
+  Mydata=Mydata.replace(/'/g,'"');
+  //parse results from mm-latest2 script
 
-//status info
- firstLine = Mydata.split('\n')[5];
- junk=firstLine.toLowerCase();
- statusobj = JSON.parse(junk);
-//temp basal 
- firstLine = Mydata.split('\n')[6];
- junk=firstLine.toLowerCase();
-tempbasalobj = JSON.parse(junk);
-//basal pattern
-firstline=Mydata.split('\n')[7];
-basalobj=JSON.parse(firstline);
-//find current default basal rate
-//convert pumptime to 2 digits per - it is not a datestring or JSON 0's are missing
-//split after T but strip errant " first
-pumptimej = Mydata.split('\n')[4];
-pumptimej2=pumptimej.replace("\'","\"");
-pumptime=pumptimej2.replace("\'","\"");
-pumptime = pumptime.substring(0, pumptime.length - 1);
-ptarray = pumptime.split("T");
-//now grab pieces, 0 is hours, 1 is min, and 2 is sec
-ptime=ptarray[1].split(":");
-//add leading 0's if they are not there
-hk=ptime[0];
-mk=ptime[1];
-sk=ptime[2];
-if (hk.length==1) {hk="0"+hk;}
-if (mk.length==1) {mk="0"+mk;}
-if (sk.length==1) {sk="0"+sk}
-pto=hk+":"+mk+":"+sk;
-n=Object.keys(basalobj).length;
-found=-1;
-i=0;
-while(i<n-1) {
-if (pto>=basalobj[i].start && pto<=basalobj[i+1].start) found=i;
-i++;
-}
-if (found==-1) found=0; //this means it must be last record, start of next is record 0
+  //status info
+   firstLine = Mydata.split('\n')[5];
+   junk=firstLine.toLowerCase();
+   statusobj = JSON.parse(junk);
+  //temp basal 
+   firstLine = Mydata.split('\n')[6];
+   junk=firstLine.toLowerCase();
+  tempbasalobj = JSON.parse(junk);
+  //basal pattern
+  firstline=Mydata.split('\n')[7];
+  basalobj=JSON.parse(firstline);
+  //find current default basal rate
+  //convert pumptime to 2 digits per - it is not a datestring or JSON 0's are missing
+  //split after T but strip errant " first
+  pumptimej = Mydata.split('\n')[4];
+  pumptimej2=pumptimej.replace("\'","\"");
+  pumptime=pumptimej2.replace("\'","\"");
+  pumptime = pumptime.substring(0, pumptime.length - 1);
+  ptarray = pumptime.split("T");
+  //now grab pieces, 0 is hours, 1 is min, and 2 is sec
+  ptime=ptarray[1].split(":");
+  //add leading 0's if they are not there
+  hk=ptime[0];
+  mk=ptime[1];
+  sk=ptime[2];
+  if (hk.length==1) {hk="0"+hk;}
+  if (mk.length==1) {mk="0"+mk;}
+  if (sk.length==1) {sk="0"+sk}
+  pto=hk+":"+mk+":"+sk;
+  n=Object.keys(basalobj).length;
+  */
+  basalobj = Mydata;
+  
+  found=-1;
+  i=0;
+  while(i<n-1) {
+  if (pto>=basalobj[i].start && pto<=basalobj[i+1].start) found=i;
+  i++;
+  }
+  if (found==-1) found=0; //this means it must be last record, start of next is record 0
 
-if (found>1&&found<(n-2))  {
-curbasalrate=basalobj[found-1].rate;
-curbasalend=basalobj[found+1].start;
-nextbasalrate=basalobj[found].rate;
-nextbasalend=basalobj[found+2].start;} 
-else if (found==n-2) {
-curbasalrate=basalobj[found].rate;
-curbasalend=basalobj[found+1].start;
-nextbasalrate=basalobj[found+1].rate;
-nextbasalend=basalobj[0].start;}
-else if (found==0) {
-curbasalrate=basalobj[0].rate;
-curbasalend=basalobj[1].start;
-nextbasalrate=basalobj[1].rate;
-nextbasalend=basalobj[2].start;
-}
-else //found=n-1
-{
-curbasalrate=basalobj[n-1].rate;
-curbasalend=basalobj[0].start;
-nextbasalrate=basalobj[0].rate;
-nextbasalend=basalobj[1].start;
-}
+  if (found>1&&found<(n-2))  {
+  curbasalrate=basalobj[found-1].rate;
+  curbasalend=basalobj[found+1].start;
+  nextbasalrate=basalobj[found].rate;
+  nextbasalend=basalobj[found+2].start;} 
+  else if (found==n-2) {
+  curbasalrate=basalobj[found].rate;
+  curbasalend=basalobj[found+1].start;
+  nextbasalrate=basalobj[found+1].rate;
+  nextbasalend=basalobj[0].start;}
+  else if (found==0) {
+  curbasalrate=basalobj[0].rate;
+  curbasalend=basalobj[1].start;
+  nextbasalrate=basalobj[1].rate;
+  nextbasalend=basalobj[2].start;
+  }
+  else //found=n-1
+  {
+  curbasalrate=basalobj[n-1].rate;
+  curbasalend=basalobj[0].start;
+  nextbasalrate=basalobj[0].rate;
+  nextbasalend=basalobj[1].start;
+  }
 
-insulinremaining=Mydata.split('\n')[8];
-//history data
-junk=Mydata.split('\n')[11];
-junk=junk.replace(/'/g,'"');
-historyobj=JSON.parse(junk);
-//settings data
-firstLine=Mydata.split('\n')[3];
-junk=firstLine.toLowerCase();
-settingsobj=JSON.parse(junk);
-//pump type
-pumptype=Mydata.split('\n')[2];
-pumptype = pumptype.substring(0, pumptype.length - 1);
-//find bolus history in range (currently grabbing up to 6 hours to match iob)
+  insulinremaining=Mydata.split('\n')[8];
+  //history data
+  junk=Mydata.split('\n')[11];
+  junk=junk.replace(/'/g,'"');
+  historyobj=JSON.parse(junk);
+  //settings data
+  firstLine=Mydata.split('\n')[3];
+  junk=firstLine.toLowerCase();
+  settingsobj=JSON.parse(junk);
+  //pump type
+  pumptype=Mydata.split('\n')[2];
+  pumptype = pumptype.substring(0, pumptype.length - 1);
+  //find bolus history in range (currently grabbing up to 6 hours to match iob)
 
-ai = [0.0,0.0];
-ai =iob(historyobj,settingsobj,pumptime);
-actintot=ai[1]; //total active insulin
-actincor=ai[0]; //total active insulin minus insulin used to cover carbs 
-actincarb=actintot-actincor; //calc act insulin from carbs
-
-
-//update time and status
-document.getElementById('pumptime').innerHTML = pumptime;
-document.getElementById('ptype').innerHTML = pumptype;
- document.getElementById('status').innerHTML = statusobj.status;
-document.getElementById('bolusing').innerHTML = statusobj.bolusing;
-document.getElementById('suspended').innerHTML = statusobj.suspended;
-//update current temp basal state
-document.getElementById('insulinremaining').innerHTML = insulinremaining;
-document.getElementById('duration').innerHTML = tempbasalobj.duration;
-document.getElementById('rate').innerHTML = tempbasalobj.rate;
-//update active insulin 
-document.getElementById('idactin').innerHTML = actintot.toFixed(2);
-document.getElementById('idactincor').innerHTML = actincor.toFixed(2);
-document.getElementById('idactincarb').innerHTML = actincarb.toFixed(2);
-//basal rates
-document.getElementById('idcurbasalrate').innerHTML = curbasalrate.toFixed(2);
-document.getElementById('idcurbasalend').innerHTML = curbasalend;
-document.getElementById('idnextbasalrate').innerHTML = nextbasalrate.toFixed(2);
-document.getElementById('idnextbasalend').innerHTML = nextbasalend;
+  ai = [0.0,0.0];
+  ai =iob(historyobj,settingsobj,pumptime);
+  actintot=ai[1]; //total active insulin
+  actincor=ai[0]; //total active insulin minus insulin used to cover carbs 
+  actincarb=actintot-actincor; //calc act insulin from carbs
 
 
-    }); //from get query
+  //update time and status
+  document.getElementById('pumptime').innerHTML = pumptime;
+  document.getElementById('ptype').innerHTML = pumptype;
+   document.getElementById('status').innerHTML = statusobj.status;
+  document.getElementById('bolusing').innerHTML = statusobj.bolusing;
+  document.getElementById('suspended').innerHTML = statusobj.suspended;
+  //update current temp basal state
+  document.getElementById('insulinremaining').innerHTML = insulinremaining;
+  document.getElementById('duration').innerHTML = tempbasalobj.duration;
+  document.getElementById('rate').innerHTML = tempbasalobj.rate;
+  //update active insulin 
+  document.getElementById('idactin').innerHTML = actintot.toFixed(2);
+  document.getElementById('idactincor').innerHTML = actincor.toFixed(2);
+  document.getElementById('idactincarb').innerHTML = actincarb.toFixed(2);
+  //basal rates
+  document.getElementById('idcurbasalrate').innerHTML = curbasalrate.toFixed(2);
+  document.getElementById('idcurbasalend').innerHTML = curbasalend;
+  document.getElementById('idnextbasalrate').innerHTML = nextbasalrate.toFixed(2);
+  document.getElementById('idnextbasalend').innerHTML = nextbasalend;
+
+
+      }); //from get query
 
 
   }); //from button click
