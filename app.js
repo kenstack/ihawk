@@ -6,17 +6,26 @@ var server = require('http').Server(app);
 
 var remote = require('./lib/remote');
 var io = require('socket.io')(server);
+var uart = require('comlink2-uart');
 
 var pump = null;
 var serial = null;
-function get_pump ( ) {
-  var transport = remote.transport( );
-  pump = transport.session
+function get_pump (session) {
+  var transport = remote.transport(function opened ( ) {
+    console.log('creating transport');
+    var stream = this;
+    session(uart(stream).session, stream);
+  });
+  /*
+  pump = transport.duplex
         .open(function ( ) {
-          console.log('created usb transport');
+          console.log('created  transport');
+          session(transport.session);
         })
         ;
-  return pump;
+  */
+  
+  return transport;
 };
 
 app.use(express.static(__dirname + "/static"));
@@ -45,7 +54,9 @@ app.get('/latest.json', function (req, res) {
 io.on('connection', function (socket) {
   socket.on('query', function (data) {
     console.log('querying', data, serial);
-    pump = get_pump( )
+    get_pump(function (pump, stream) {
+      console.log(pump);
+      pump.open( )
       .serial(serial)
       .prelude({minutes: 3})
       .ReadPumpModel(function rec_model (model, msg) {
@@ -63,9 +74,12 @@ io.on('connection', function (socket) {
             socket.emit('history', history, msg);
           });
         }
+        // stream.close( );
       })
       .end( );
+      ;
 
+    })
       ;
 
   });
