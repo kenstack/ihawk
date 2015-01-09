@@ -74,9 +74,11 @@ io.on('connection', function (socket) {
             socket.emit('history', history, msg);
           });
         }
-        // stream.close( );
       })
-      .end( );
+      .end(function ( ) {
+        console.log("GAH CLOSE");
+        stream.close( );
+      });
       ;
 
     })
