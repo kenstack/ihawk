@@ -1,0 +1,27 @@
+{
+  "name": "ihawk",
+  "version": "0.0.0",
+  "description": "JQuery Mobile based application to query status and set temp basal rates on Medtronic insulin pumps remotely. ihawk is based on Ben West's amazing decocare tools (http://github.com/bewest/decoding-carelink/).   Utilizes a Raspberry Pi running an Apache 2 server to run an interface for CGI scripts that run decocare and the carelink stick.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bewest/ihawk.git"
+  },
+  "author": "",
+  "license": "AGPLv3",
+  "bugs": {
+    "url": "https://github.com/bewest/ihawk/issues"
+  },
+  "dependencies": {
+    "express": "~4.10.7",
+    "comlink2-uart": "git://github.com/bewest/comlink2-uart.git",
+    "socket.io": "~1.2.1",
+    "serialport": "~1.4.10"
+  },
+  "devDependencies": {
+    "nodemon": "~1.2.1"
+  }
+}
