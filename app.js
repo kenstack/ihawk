@@ -64,7 +64,10 @@ io.on('connection', function (socket) {
           });
         }
       })
+      .end( );
+
       ;
+
   });
   socket.on('serial', function (data) {
     console.log('serial data input', data, arguments);

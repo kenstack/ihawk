@@ -12,7 +12,7 @@ $(window).ready(function (ev) {
     console.log("CLOCK", clock, msg, arguments);
     var now = moment(clock);
     console.log("NOW", now, clock);
-    $('#clock').trigger('now', now, clock);
+    $('#clock').trigger('now', now, clock, msg.data.toString('hex'));
 
   });
   socket.on('model', function (model, msg) {
